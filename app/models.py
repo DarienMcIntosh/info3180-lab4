@@ -13,7 +13,7 @@ class UserProfile(db.Model):
     first_name = db.Column(db.String(80))
     last_name = db.Column(db.String(80))
     username = db.Column(db.String(80), unique=True)
-    password = db.Column(db.String(128))  # New password field
+    password = db.Column(db.String(255))  # New password field
 
     def __init__(self, first_name, last_name, username, password):
         self.first_name = first_name
