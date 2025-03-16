@@ -110,6 +110,14 @@ def get_image(filename):
     uploads_dir = os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER'])
     return send_from_directory(uploads_dir, filename)
 
+@app.route('/logout')
+@login_required
+def logout():
+    """Logout the current user."""
+    logout_user()
+    flash('You have been logged out successfully.', 'success')
+    return redirect(url_for('home'))
+
 
 # Helper function to get list of uploaded files
 def get_uploaded_images():
