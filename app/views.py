@@ -7,6 +7,7 @@ from app.models import UserProfile
 from app.forms import LoginForm
 from werkzeug.security import check_password_hash
 from app.forms import LoginForm, UploadForm
+from flask import send_from_directory
 
 
 
@@ -37,16 +38,21 @@ def upload():
         # Get file data and save to your uploads folder
         photo = form.photo.data
         filename = secure_filename(photo.filename)
-        photo.save(os.path.join(
-            app.config['UPLOAD_FOLDER'], filename
-        ))
+        
+        # Use the upload folder path from config, relative to project root
+        # not relative to app directory
+        uploads_dir = os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER'])
+        if not os.path.exists(uploads_dir):
+            os.makedirs(uploads_dir)
+            
+        # Save the file
+        photo.save(os.path.join(uploads_dir, filename))
 
         flash('File Saved', 'success')
-        return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
+        return redirect(url_for('files'))
 
     # Flash any form errors
     flash_errors(form)
-
     return render_template('upload.html', form=form)
 
 
@@ -88,6 +94,37 @@ def login():
     flash_errors(form)
 
     return render_template("login.html", form=form)
+
+@app.route('/files')
+@login_required
+def files():
+    # Get list of images from uploads folder
+    images = get_uploaded_images()
+    
+    # Render the template with the list of images
+    return render_template('files.html', images=images)
+
+@app.route('/uploads/<filename>')
+def get_image(filename):
+    """Serve uploaded images"""
+    uploads_dir = os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER'])
+    return send_from_directory(uploads_dir, filename)
+
+
+# Helper function to get list of uploaded files
+def get_uploaded_images():
+    # Use path relative to project root, not app directory
+    uploads_dir = os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER'])
+    
+    # Get filenames of images in the uploads folder
+    images = []
+    if os.path.exists(uploads_dir):
+        for filename in os.listdir(uploads_dir):
+            # Only add files with allowed extensions (jpg, jpeg, png)
+            if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+                images.append(filename)
+    
+    return images
 
 # user_loader callback. This callback is used to reload the user object from
 # the user ID stored in the session
